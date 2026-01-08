@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 import zipfile
 import io
-import base64
 
 # ========== SECURITY & PRIVACY SETTINGS ==========
 TARGET_CHARS = 499  # target character count including spaces
@@ -341,37 +340,24 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
     
     return comment
 
-# ========== LOGO DISPLAY FUNCTION ==========
-def add_logo(logo_path):
-    """Add a logo to the app (optional)"""
-    try:
-        # If you add a logo.png file to your GitHub repo
-        with open(logo_path, "rb") as f:
-            logo_bytes = f.read()
-        logo_base64 = base64.b64encode(logo_bytes).decode()
-        st.markdown(
-            f"""
-            <style>
-                [data-testid="stSidebarNav"] {{
-                    background-image: url(data:image/png;base64,{logo_base64});
-                    background-repeat: no-repeat;
-                    background-size: 80%;
-                    background-position: 20px 20px;
-                }}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-    except:
-        pass  # Logo is optional
-
 # ========== STREAMLIT APP LAYOUT ==========
-
-# Try to add logo (optional - add logo.png to your GitHub if you want)
-add_logo("logo.png")
 
 # Sidebar for navigation and info
 with st.sidebar:
+    # Logo at top of sidebar
+    try:
+        st.image("logo.png", width=200)
+    except:
+        st.markdown("""
+        <div style='text-align: center;'>
+            <div style='font-size: 48px; margin-bottom: 10px;'>📚</div>
+            <h3 style='margin: 0;'>Report Generator</h3>
+            <p style='color: #666; font-size: 14px;'>v2.2</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")  # Separator line after logo
+    
     st.title("📚 Navigation")
     
     app_mode = st.radio(
