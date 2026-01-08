@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import zipfile
 import io
+import base64
 
 # ========== SECURITY & PRIVACY SETTINGS ==========
 TARGET_CHARS = 499  # target character count including spaces
@@ -170,6 +171,8 @@ def fix_pronouns_in_text(text, pronoun, possessive):
     text = text.replace('he', pronoun).replace('He', pronoun.capitalize())
     text = text.replace('his', possessive).replace('His', possessive.capitalize())
     text = text.replace('him', pronoun).replace('Him', pronoun.capitalize())
+    text = text.replace('himself', f"{pronoun}self")
+    text = text.replace('herself', f"{pronoun}self")
     
     return text
 
@@ -181,18 +184,27 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
     if subject == "English":
         if year == 7:
             opening = random.choice(opening_7_eng)
-            # FIXED: Use fix_pronouns_in_text to handle gender pronouns
+            # FIXED: CORRECT pronoun handling for attitude
             attitude_text = fix_pronouns_in_text(attitude_7_eng[att], p, p_poss)
-            attitude_sentence = f"{opening} {name} {attitude_text}."
+            attitude_sentence = f"{opening} {name} {attitude_text}"
+            if not attitude_sentence.endswith('.'):
+                attitude_sentence += '.'
             
-            # FIXED: Add pronoun to reading and writing sentences
+            # FIXED: CORRECT pronoun handling for reading - ADD PRONOUN!
             reading_text = fix_pronouns_in_text(reading_7_eng[achieve], p, p_poss)
-            reading_sentence = f"In reading, {p} {lowercase_first(reading_text)}"
+            # Ensure it starts with pronoun
+            if reading_text[0].islower():  # If starts with verb, add pronoun
+                reading_text = f"{p} {reading_text}"
+            reading_sentence = f"In reading, {reading_text}"
             if not reading_sentence.endswith('.'):
                 reading_sentence += '.'
             
+            # FIXED: CORRECT pronoun handling for writing - ADD PRONOUN!
             writing_text = fix_pronouns_in_text(writing_7_eng[achieve], p, p_poss)
-            writing_sentence = f"In writing, {p} {lowercase_first(writing_text)}"
+            # Ensure it starts with pronoun
+            if writing_text[0].islower():  # If starts with verb, add pronoun
+                writing_text = f"{p} {writing_text}"
+            writing_sentence = f"In writing, {writing_text}"
             if not writing_sentence.endswith('.'):
                 writing_sentence += '.'
             
@@ -211,16 +223,25 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
         else:  # Year 8
             opening = random.choice(opening_8_eng)
             attitude_text = fix_pronouns_in_text(attitude_8_eng[att], p, p_poss)
-            attitude_sentence = f"{opening} {name} {attitude_text}."
+            attitude_sentence = f"{opening} {name} {attitude_text}"
+            if not attitude_sentence.endswith('.'):
+                attitude_sentence += '.'
             
-            # FIXED: Add pronoun to reading and writing sentences
+            # FIXED: CORRECT pronoun handling for reading - ADD PRONOUN!
             reading_text = fix_pronouns_in_text(reading_8_eng[achieve], p, p_poss)
-            reading_sentence = f"In reading, {p} {lowercase_first(reading_text)}"
+            # Ensure it starts with pronoun
+            if reading_text[0].islower():  # If starts with verb, add pronoun
+                reading_text = f"{p} {reading_text}"
+            reading_sentence = f"In reading, {reading_text}"
             if not reading_sentence.endswith('.'):
                 reading_sentence += '.'
             
+            # FIXED: CORRECT pronoun handling for writing - ADD PRONOUN!
             writing_text = fix_pronouns_in_text(writing_8_eng[achieve], p, p_poss)
-            writing_sentence = f"In writing, {p} {lowercase_first(writing_text)}"
+            # Ensure it starts with pronoun
+            if writing_text[0].islower():  # If starts with verb, add pronoun
+                writing_text = f"{p} {writing_text}"
+            writing_sentence = f"In writing, {writing_text}"
             if not writing_sentence.endswith('.'):
                 writing_sentence += '.'
             
@@ -240,10 +261,16 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
         if year == 7:
             opening = random.choice(opening_7_sci)
             attitude_text = fix_pronouns_in_text(attitude_7_sci[att], p, p_poss)
-            attitude_sentence = f"{opening} {name} {attitude_text}."
+            attitude_sentence = f"{opening} {name} {attitude_text}"
+            if not attitude_sentence.endswith('.'):
+                attitude_sentence += '.'
             
+            # FIXED: CORRECT pronoun handling for science - ADD PRONOUN!
             science_text = fix_pronouns_in_text(science_7_sci[achieve], p, p_poss)
-            reading_sentence = f"{p.capitalize()} {lowercase_first(science_text)}"
+            # Ensure it starts with pronoun
+            if science_text[0].islower():  # If starts with verb, add pronoun
+                science_text = f"{p} {science_text}"
+            reading_sentence = science_text
             if not reading_sentence.endswith('.'):
                 reading_sentence += '.'
             
@@ -259,10 +286,16 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
         else:  # Year 8
             opening = random.choice(opening_8_sci)
             attitude_text = fix_pronouns_in_text(attitude_8_sci[att], p, p_poss)
-            attitude_sentence = f"{opening} {name} {attitude_text}."
+            attitude_sentence = f"{opening} {name} {attitude_text}"
+            if not attitude_sentence.endswith('.'):
+                attitude_sentence += '.'
             
+            # FIXED: CORRECT pronoun handling for science - ADD PRONOUN!
             science_text = fix_pronouns_in_text(science_8_sci[achieve], p, p_poss)
-            reading_sentence = f"{p.capitalize()} {lowercase_first(science_text)}"
+            # Ensure it starts with pronoun
+            if science_text[0].islower():  # If starts with verb, add pronoun
+                science_text = f"{p} {science_text}"
+            reading_sentence = science_text
             if not reading_sentence.endswith('.'):
                 reading_sentence += '.'
             
@@ -279,6 +312,8 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
     if attitude_target:
         attitude_target = sanitize_input(attitude_target)
         attitude_target_sentence = f" {lowercase_first(attitude_target)}"
+        if not attitude_target_sentence.endswith('.'):
+            attitude_target_sentence += '.'
     else:
         attitude_target_sentence = ""
 
@@ -305,7 +340,35 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
         comment = comment.rstrip(' ,;') + '.'
     
     return comment
+
+# ========== LOGO DISPLAY FUNCTION ==========
+def add_logo(logo_path):
+    """Add a logo to the app (optional)"""
+    try:
+        # If you add a logo.png file to your GitHub repo
+        with open(logo_path, "rb") as f:
+            logo_bytes = f.read()
+        logo_base64 = base64.b64encode(logo_bytes).decode()
+        st.markdown(
+            f"""
+            <style>
+                [data-testid="stSidebarNav"] {{
+                    background-image: url(data:image/png;base64,{logo_base64});
+                    background-repeat: no-repeat;
+                    background-size: 80%;
+                    background-position: 20px 20px;
+                }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    except:
+        pass  # Logo is optional
+
 # ========== STREAMLIT APP LAYOUT ==========
+
+# Try to add logo (optional - add logo.png to your GitHub if you want)
+add_logo("logo.png")
 
 # Sidebar for navigation and info
 with st.sidebar:
@@ -326,7 +389,7 @@ with st.sidebar:
     - Rate limiting enabled
     """)
     
-    if st.button("🔄 Clear All Data", type="secondary"):
+    if st.button("🔄 Clear All Data", type="secondary", use_container_width=True):
         st.session_state.clear()
         st.session_state.app_initialized = True
         st.session_state.upload_count = 0
@@ -335,11 +398,11 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.caption("v2.1 • Secure Edition")
+    st.caption("v2.2 • Teacher-Friendly Edition")
 
 # Main content area
-st.title("🔒 Secure Multi-Subject Report Comment Generator")
-st.caption("~499 characters per comment • Ephemeral processing • No data retention")
+st.title("📝 Multi-Subject Report Comment Generator")
+st.caption("~499 characters per comment • Secure • No data retention")
 
 # Privacy notice banner
 st.warning("""
@@ -347,17 +410,42 @@ st.warning("""
 Close browser tab to completely erase all data. For use with anonymized student data only.
 """, icon="🔒")
 
-# Progress tracker
+# ========== NEW: ONE-LINE PROGRESS TRACKER ==========
+st.subheader("🎯 Three Easy Steps")
+
 if 'progress' not in st.session_state:
     st.session_state.progress = 1
 
+# Create a clean one-line progress tracker
 progress_cols = st.columns(3)
 with progress_cols[0]:
-    st.markdown(f"**Step {st.session_state.progress}:** {'✅' if st.session_state.progress > 1 else '1️⃣'} Configure")
+    st.markdown(f"""
+    <div style='text-align: center; padding: 10px; background-color: {'#e6f3ff' if st.session_state.progress == 1 else '#f0f2f6'}; border-radius: 10px;'>
+        <h3>{'✅' if st.session_state.progress > 1 else '1️⃣'}</h3>
+        <h4>Select</h4>
+        <p>Choose student details</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 with progress_cols[1]:
-    st.markdown(f"**Step 2:** {'✅' if st.session_state.progress > 2 else '2️⃣'} Generate")
+    st.markdown(f"""
+    <div style='text-align: center; padding: 10px; background-color: {'#e6f3ff' if st.session_state.progress == 2 else '#f0f2f6'}; border-radius: 10px;'>
+        <h3>{'✅' if st.session_state.progress > 2 else '2️⃣'}</h3>
+        <h4>Generate</h4>
+        <p>Create comments</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 with progress_cols[2]:
-    st.markdown(f"**Step 3:** {'✅' if st.session_state.progress > 3 else '3️⃣'} Download")
+    st.markdown(f"""
+    <div style='text-align: center; padding: 10px; background-color: {'#e6f3ff' if st.session_state.progress == 3 else '#f0f2f6'}; border-radius: 10px;'>
+        <h3>{'✅' if st.session_state.progress > 3 else '3️⃣'}</h3>
+        <h4>Download</h4>
+        <p>Export reports</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
 
 # ========== SINGLE STUDENT MODE ==========
 if app_mode == "Single Student":
@@ -373,7 +461,7 @@ if app_mode == "Single Student":
             gender = st.selectbox("Gender", ["Male", "Female"])
         
         with col2:
-            # FIXED: Using dropdowns instead of sliders for faster teacher input
+            # Using dropdowns instead of sliders for faster teacher input
             att = st.selectbox("Attitude Band", 
                              options=[90,85,80,75,70,65,60,55,40],
                              index=3)  # Default to 75
@@ -660,20 +748,18 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
 st.markdown("---")
 footer_cols = st.columns([2, 1])
 with footer_cols[0]:
-    st.caption("© Secure Report Generator v2.1 | For educational use only")
+    st.caption("© Report Generator v2.2 | For educational use only")
 with footer_cols[1]:
-    if st.button("ℹ️ Help", use_container_width=True):
+    if st.button("ℹ️ Quick Help", use_container_width=True):
         st.info("""
         **Quick Help:**
-        1. Choose Single Student or Batch Upload
-        2. Fill in student details
-        3. Generate comments
-        4. Download reports
-        5. Close browser when done
+        1. **Select**: Choose student details
+        2. **Generate**: Create comments
+        3. **Download**: Export reports
         
         **Hotkeys:**
         - Tab: Move between fields
         - Enter: Submit form
         
-        Contact: Use GitHub issues for support
+        Need help? Contact support.
         """)
