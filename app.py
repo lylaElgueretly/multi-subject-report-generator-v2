@@ -199,22 +199,6 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
     # Choose the correct banks
     if subject == "English":
         if year == 7:
-            # ========== DEBUG CODE START ==========
-            st.write("🔍 **DEBUG INFO for Year 7 English:**")
-            st.write(f"Student: {name}")
-            st.write(f"Target band selected: {target}")
-            
-            # Get the raw text from your statement file
-            raw_target_text = target_7_eng[target]
-            st.write(f"Raw text from statement file: '{raw_target_text}'")
-            
-            # Check for "tshe" typo
-            if "tshe" in raw_target_text:
-                st.error("❌ PROBLEM FOUND: 'tshe' is in the statement file!")
-            else:
-                st.success("✅ Good: No 'tshe' in statement file")
-            # ========== DEBUG CODE END ==========
-            
             opening = random.choice(opening_7_eng)
             # FIXED: CORRECT pronoun handling for attitude
             attitude_text = fix_pronouns_in_text(attitude_7_eng[att], p, p_poss)
@@ -473,9 +457,14 @@ if app_mode == "Single Student":
     # Store submitted state for auto-scroll
     if 'form_submitted' not in st.session_state:
         st.session_state.form_submitted = False
+    if 'scroll_to_form' not in st.session_state:
+        st.session_state.scroll_to_form = False
     
-    # Use clear_on_submit to reset most fields
-    with st.form("single_student_form", clear_on_submit=True):
+    # Create a form with a unique key
+    form_key = f"single_student_form_{datetime.now().timestamp()}"
+    
+    # Use a form with clear_on_submit to reset most fields
+    with st.form(key=form_key, clear_on_submit=True):
         col1, col2 = st.columns(2)
         
         with col1:
@@ -525,7 +514,7 @@ if app_mode == "Single Student":
             char_count = len(comment)
         
         st.session_state.progress = 2
-        st.session_state.form_submitted = True  # Mark that we need to scroll
+        st.session_state.form_submitted = True
         
         # Display comment with stats
         st.subheader("📝 Generated Comment")
@@ -559,17 +548,22 @@ if app_mode == "Single Student":
         if st.session_state.form_submitted:
             js_scroll_top = """
             <script>
-                // Scroll to the top of the page
-                window.parent.document.querySelector('section.main').scrollTo(0, 0);
+                // Scroll to the top of the generated comment section
+                var element = document.querySelector('h3:has(+ .stTextArea)');
+                if (element) {
+                    element.scrollIntoView({behavior: 'smooth'});
+                }
             </script>
             """
             st.components.v1.html(js_scroll_top, height=0)
-            st.session_state.form_submitted = False  # Reset for next time
+            st.session_state.form_submitted = False
         
-        # Add another button
+        # Add Another Student button
         col_reset = st.columns([3, 1])
         with col_reset[1]:
             if st.button("➕ Add Another Student", type="secondary", use_container_width=True):
+                # Set flag to scroll to form
+                st.session_state.scroll_to_form = True
                 # Clear the name field specifically
                 if 'student_name_input' in st.session_state:
                     st.session_state.student_name_input = ""
@@ -579,6 +573,23 @@ if app_mode == "Single Student":
                 st.session_state.progress = 1
                 # Force a rerun to show clean form
                 st.rerun()
+    
+    # Scroll to form when "Add Another Student" is clicked
+    if st.session_state.get('scroll_to_form', False):
+        js_scroll_to_form = """
+        <script>
+            // Scroll to the Student Entry section
+            var elements = document.querySelectorAll('h3');
+            for (var i = 0; i < elements.length; i++) {
+                if (elements[i].textContent.includes('Student Entry')) {
+                    elements[i].scrollIntoView({behavior: 'smooth'});
+                    break;
+                }
+            }
+        </script>
+        """
+        st.components.v1.html(js_scroll_to_form, height=0)
+        st.session_state.scroll_to_form = False
 
 # ========== BATCH UPLOAD MODE ==========
 elif app_mode == "Batch Upload":
