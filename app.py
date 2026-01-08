@@ -344,17 +344,14 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
 
 # Sidebar for navigation and info
 with st.sidebar:
-    # Logo at top of sidebar
-    try:
-        st.image("logo.png", width=200)
-    except:
-        st.markdown("""
-        <div style='text-align: center;'>
-            <div style='font-size: 48px; margin-bottom: 10px;'>📚</div>
-            <h3 style='margin: 0;'>Report Generator</h3>
-            <p style='color: #666; font-size: 14px;'>v2.2</p>
-        </div>
-        """, unsafe_allow_html=True)
+    # ALWAYS SHOW LOGO - No try/except needed
+    st.markdown("""
+    <div style='text-align: center; padding: 10px;'>
+        <div style='font-size: 48px; margin-bottom: 10px;'>📚</div>
+        <h2 style='margin: 0; color: #1E88E5;'>Report Generator</h2>
+        <p style='color: #666; font-size: 14px; margin-top: 5px;'>v2.2 • Teacher-Friendly</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("---")  # Separator line after logo
     
@@ -384,7 +381,7 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.caption("v2.2 • Teacher-Friendly Edition")
+    st.caption("For educational use only")
 
 # Main content area
 st.title("📝 Multi-Subject Report Comment Generator")
