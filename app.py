@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import zipfile
 import io
+import re  # <-- ADD THIS IMPORT FOR WORD BOUNDARIES
 
 # ========== SECURITY & PRIVACY SETTINGS ==========
 TARGET_CHARS = 499  # target character count including spaces
@@ -161,21 +162,34 @@ def truncate_comment(comment, target=TARGET_CHARS):
         truncated = truncated[:truncated.rfind(".")+1]
     return truncated
 
+# ========== CRITICAL FIX ==========
 def fix_pronouns_in_text(text, pronoun, possessive):
-    """Fix gender pronouns and common typos in statement text"""
+    """Fix gender pronouns in statement text using word boundaries"""
     if not text:
         return text
     
-    # Fix the specific spelling mistake you found
-    text = text.replace('approacshed', 'approached')
-    text = text.replace('tshe', 'the')
+    # Use word boundaries (\b) to only match complete words, not parts of words
+    # This prevents "the" → "tshe" and "approached" → "approacshed"
     
-    # Replace all pronoun variations
-    text = text.replace('he', pronoun).replace('He', pronoun.capitalize())
-    text = text.replace('his', possessive).replace('His', possessive.capitalize())
-    text = text.replace('him', pronoun).replace('Him', pronoun.capitalize())
-    text = text.replace('himself', f"{pronoun}self")
-    text = text.replace('herself', f"{pronoun}self")
+    # Fix "he" as a standalone word only
+    text = re.sub(r'\bhe\b', pronoun, text, flags=re.IGNORECASE)
+    
+    # Fix capitalized "He" 
+    text = re.sub(r'\bHe\b', pronoun.capitalize(), text)
+    
+    # Fix "his" as a standalone word only
+    text = re.sub(r'\bhis\b', possessive, text, flags=re.IGNORECASE)
+    
+    # Fix capitalized "His"
+    text = re.sub(r'\bHis\b', possessive.capitalize(), text)
+    
+    # Fix "him" as a standalone word only
+    text = re.sub(r'\bhim\b', pronoun, text, flags=re.IGNORECASE)
+    text = re.sub(r'\bHim\b', pronoun.capitalize(), text)
+    
+    # Fix reflexive pronouns
+    text = re.sub(r'\bhimself\b', f"{pronoun}self", text, flags=re.IGNORECASE)
+    text = re.sub(r'\bherself\b', f"{pronoun}self", text, flags=re.IGNORECASE)
     
     return text
 
@@ -390,7 +404,7 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.caption("v2.3 • Teacher-Friendly Edition")
+    st.caption("v2.4 • Fixed Typos Edition")
 
 # Main content area with logo
 col1, col2 = st.columns([1, 4])
@@ -753,7 +767,7 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
 st.markdown("---")
 footer_cols = st.columns([2, 1])
 with footer_cols[0]:
-    st.caption("© Report Generator v2.3 | For educational use only")
+    st.caption("© Report Generator v2.4 • Fixed Typos Edition")
 with footer_cols[1]:
     if st.button("ℹ️ Quick Help", use_container_width=True):
         st.info("""
