@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import zipfile
 import io
-import re  # <-- ADD THIS IMPORT FOR WORD BOUNDARIES
+import re
 
 # ========== SECURITY & PRIVACY SETTINGS ==========
 TARGET_CHARS = 499  # target character count including spaces
@@ -162,13 +162,12 @@ def truncate_comment(comment, target=TARGET_CHARS):
         truncated = truncated[:truncated.rfind(".")+1]
     return truncated
 
-# ========== CRITICAL FIX ==========
 def fix_pronouns_in_text(text, pronoun, possessive):
     """Fix gender pronouns in statement text using word boundaries"""
     if not text:
         return text
     
-    # Use word boundaries (\b) to only match complete words, not parts of words
+    # Use word boundaries (\b) to only match complete words
     # This prevents "the" → "tshe" and "approached" → "approacshed"
     
     # Fix "he" as a standalone word only
@@ -404,7 +403,7 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.caption("v2.4 • Fixed Typos Edition")
+    st.caption("v2.5 • Teacher-Focused Edition")
 
 # Main content area with logo
 col1, col2 = st.columns([1, 4])
@@ -429,54 +428,62 @@ st.warning("""
 Close browser tab to completely erase all data. For use with anonymized student data only.
 """, icon="🔒")
 
-# ========== NEW: ONE-LINE PROGRESS TRACKER ==========
+# ========== COMPACT PROGRESS TRACKER ==========
 st.subheader("🎯 Three Easy Steps")
 
 if 'progress' not in st.session_state:
     st.session_state.progress = 1
 
-# Create a clean one-line progress tracker
-progress_cols = st.columns(3)
-with progress_cols[0]:
-    st.markdown(f"""
-    <div style='text-align: center; padding: 10px; background-color: {'#e6f3ff' if st.session_state.progress == 1 else '#f0f2f6'}; border-radius: 10px;'>
-        <h3>{'✅' if st.session_state.progress > 1 else '1️⃣'}</h3>
-        <h4>Select</h4>
-        <p>Choose student details</p>
-    </div>
-    """, unsafe_allow_html=True)
+# Use a more compact, horizontal layout
+step_col1, step_col2, step_col3 = st.columns(3)
 
-with progress_cols[1]:
-    st.markdown(f"""
-    <div style='text-align: center; padding: 10px; background-color: {'#e6f3ff' if st.session_state.progress == 2 else '#f0f2f6'}; border-radius: 10px;'>
-        <h3>{'✅' if st.session_state.progress > 2 else '2️⃣'}</h3>
-        <h4>Generate</h4>
-        <p>Create comments</p>
-    </div>
-    """, unsafe_allow_html=True)
+# Helper function for compact step boxes
+def step_box(col, step_num, title, description):
+    with col:
+        is_current = st.session_state.progress == step_num
+        bg_color = '#e6f3ff' if is_current else '#f8f9fa'
+        st.markdown(f"""
+        <div style='
+            text-align: center;
+            padding: 8px 5px;
+            margin: 2px 0;
+            background-color: {bg_color};
+            border-radius: 8px;
+            border-left: 4px solid #1E88E5;
+            font-size: 0.9em;
+        '>
+            <div style='font-size: 1.2em; margin-bottom: 2px;'>
+                {'✅' if st.session_state.progress > step_num else f'{step_num}.'} {title}
+            </div>
+            <div style='font-size: 0.85em; color: #666;'>{description}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-with progress_cols[2]:
-    st.markdown(f"""
-    <div style='text-align: center; padding: 10px; background-color: {'#e6f3ff' if st.session_state.progress == 3 else '#f0f2f6'}; border-radius: 10px;'>
-        <h3>{'✅' if st.session_state.progress > 3 else '3️⃣'}</h3>
-        <h4>Download</h4>
-        <p>Export reports</p>
-    </div>
-    """, unsafe_allow_html=True)
+step_box(step_col1, 1, "Select", "Choose student details")
+step_box(step_col2, 2, "Generate", "Create the comment")
+step_box(step_col3, 3, "Download", "Export your reports")
 
-st.markdown("---")
+# Add minimal space before the form
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ========== SINGLE STUDENT MODE ==========
 if app_mode == "Single Student":
     st.subheader("👤 Single Student Entry")
     
-    with st.form("single_student_form"):
+    # Store submitted state for auto-scroll
+    if 'form_submitted' not in st.session_state:
+        st.session_state.form_submitted = False
+    
+    # Use clear_on_submit to reset most fields
+    with st.form("single_student_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         
         with col1:
             subject = st.selectbox("Subject", ["English", "Science"])
             year = st.selectbox("Year", [7, 8])
-            name = st.text_input("Student Name", placeholder="Enter first name only")
+            # Key the text_input to session state for better control
+            name = st.text_input("Student Name", placeholder="Enter first name only", 
+                                 key='student_name_input')
             gender = st.selectbox("Gender", ["Male", "Female"])
         
         with col2:
@@ -497,7 +504,8 @@ if app_mode == "Single Student":
         
         attitude_target = st.text_area("Optional Attitude Next Steps",
                                      placeholder="E.g., continue to participate actively in class discussions...",
-                                     height=60)
+                                     height=60,
+                                     key='attitude_target_input')
         
         col_submit = st.columns([3, 1])
         with col_submit[1]:
@@ -512,10 +520,12 @@ if app_mode == "Single Student":
         
         with st.spinner("Generating comment..."):
             comment = generate_comment(subject, year, name, gender, att, achieve, 
-                                     target, pronouns, attitude_target)
+                                     target, pronouns, 
+                                     st.session_state.get('attitude_target_input', ''))
             char_count = len(comment)
         
         st.session_state.progress = 2
+        st.session_state.form_submitted = True  # Mark that we need to scroll
         
         # Display comment with stats
         st.subheader("📝 Generated Comment")
@@ -545,10 +555,30 @@ if app_mode == "Single Student":
         }
         st.session_state.all_comments.append(student_entry)
         
+        # Auto-scroll to top after generation
+        if st.session_state.form_submitted:
+            js_scroll_top = """
+            <script>
+                // Scroll to the top of the page
+                window.parent.document.querySelector('section.main').scrollTo(0, 0);
+            </script>
+            """
+            st.components.v1.html(js_scroll_top, height=0)
+            st.session_state.form_submitted = False  # Reset for next time
+        
         # Add another button
-        if st.button("➕ Add Another Student", type="secondary"):
-            st.session_state.progress = 1
-            st.rerun()
+        col_reset = st.columns([3, 1])
+        with col_reset[1]:
+            if st.button("➕ Add Another Student", type="secondary", use_container_width=True):
+                # Clear the name field specifically
+                if 'student_name_input' in st.session_state:
+                    st.session_state.student_name_input = ""
+                if 'attitude_target_input' in st.session_state:
+                    st.session_state.attitude_target_input = ""
+                
+                st.session_state.progress = 1
+                # Force a rerun to show clean form
+                st.rerun()
 
 # ========== BATCH UPLOAD MODE ==========
 elif app_mode == "Batch Upload":
@@ -761,13 +791,18 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
             st.session_state.all_comments = []
             st.session_state.progress = 1
             st.success("All comments cleared! Ready for new entries.")
+            # Also clear form fields
+            if 'student_name_input' in st.session_state:
+                st.session_state.student_name_input = ""
+            if 'attitude_target_input' in st.session_state:
+                st.session_state.attitude_target_input = ""
             st.rerun()
 
 # ========== FOOTER ==========
 st.markdown("---")
 footer_cols = st.columns([2, 1])
 with footer_cols[0]:
-    st.caption("© Report Generator v2.4 • Fixed Typos Edition")
+    st.caption("© Report Generator v2.5 • Teacher-Focused Edition")
 with footer_cols[1]:
     if st.button("ℹ️ Quick Help", use_container_width=True):
         st.info("""
