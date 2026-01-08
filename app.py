@@ -460,34 +460,79 @@ if app_mode == "Single Student":
     if 'scroll_to_form' not in st.session_state:
         st.session_state.scroll_to_form = False
     
-    # Create a form with a unique key
-    form_key = f"single_student_form_{datetime.now().timestamp()}"
+    # Store form values in session state to prevent loss
+    if 'form_subject' not in st.session_state:
+        st.session_state.form_subject = "English"
+    if 'form_year' not in st.session_state:
+        st.session_state.form_year = 7
+    if 'form_gender' not in st.session_state:
+        st.session_state.form_gender = "Male"
+    if 'form_att' not in st.session_state:
+        st.session_state.form_att = 75
+    if 'form_achieve' not in st.session_state:
+        st.session_state.form_achieve = 75
+    if 'form_target' not in st.session_state:
+        st.session_state.form_target = 75
     
-    # Use a form with clear_on_submit to reset most fields
-    with st.form(key=form_key, clear_on_submit=True):
+    # Create a form WITHOUT clear_on_submit to preserve values
+    with st.form(key="single_student_form", clear_on_submit=False):
         col1, col2 = st.columns(2)
         
         with col1:
-            subject = st.selectbox("Subject", ["English", "Science"])
-            year = st.selectbox("Year", [7, 8])
+            # Use session state to preserve values
+            subject = st.selectbox(
+                "Subject", 
+                ["English", "Science"],
+                index=0 if st.session_state.form_subject == "English" else 1,
+                key='subject_select'
+            )
+            st.session_state.form_subject = subject
+            
+            year = st.selectbox(
+                "Year", 
+                [7, 8],
+                index=0 if st.session_state.form_year == 7 else 1,
+                key='year_select'
+            )
+            st.session_state.form_year = year
+            
             # Key the text_input to session state for better control
             name = st.text_input("Student Name", placeholder="Enter first name only", 
                                  key='student_name_input')
-            gender = st.selectbox("Gender", ["Male", "Female"])
+            
+            gender = st.selectbox(
+                "Gender", 
+                ["Male", "Female"],
+                index=0 if st.session_state.form_gender == "Male" else 1,
+                key='gender_select'
+            )
+            st.session_state.form_gender = gender
         
         with col2:
             # Using dropdowns instead of sliders for faster teacher input
-            att = st.selectbox("Attitude Band", 
-                             options=[90,85,80,75,70,65,60,55,40],
-                             index=3)  # Default to 75
+            att = st.selectbox(
+                "Attitude Band", 
+                options=[90,85,80,75,70,65,60,55,40],
+                index=[90,85,80,75,70,65,60,55,40].index(st.session_state.form_att),
+                key='att_select'
+            )
+            st.session_state.form_att = att
             
-            achieve = st.selectbox("Achievement Band",
-                                 options=[90,85,80,75,70,65,60,55,40],
-                                 index=3)  # Default to 75
+            achieve = st.selectbox(
+                "Achievement Band",
+                options=[90,85,80,75,70,65,60,55,40],
+                index=[90,85,80,75,70,65,60,55,40].index(st.session_state.form_achieve),
+                key='achieve_select'
+            )
+            st.session_state.form_achieve = achieve
             
-            target = st.selectbox("Target Band",
-                                options=[90,85,80,75,70,65,60,55,40],
-                                index=3)  # Default to 75
+            target = st.selectbox(
+                "Target Band",
+                options=[90,85,80,75,70,65,60,55,40],
+                index=[90,85,80,75,70,65,60,55,40].index(st.session_state.form_target),
+                key='target_select'
+            )
+            st.session_state.form_target = target
             
             st.caption("💡 Use dropdowns for faster input. Tab key moves between fields.")
         
@@ -500,79 +545,86 @@ if app_mode == "Single Student":
         with col_submit[1]:
             submitted = st.form_submit_button("🚀 Generate Comment", use_container_width=True)
     
-    if submitted and name:
-        if not validate_upload_rate():
-            st.stop()
-        
-        name = sanitize_input(name)
-        pronouns = get_pronouns(gender)
-        
-        with st.spinner("Generating comment..."):
-            comment = generate_comment(subject, year, name, gender, att, achieve, 
-                                     target, pronouns, 
-                                     st.session_state.get('attitude_target_input', ''))
-            char_count = len(comment)
-        
-        st.session_state.progress = 2
-        st.session_state.form_submitted = True
-        
-        # Display comment with stats
-        st.subheader("📝 Generated Comment")
-        st.text_area("", comment, height=200, key="comment_display")
-        
-        col_stats = st.columns(3)
-        with col_stats[0]:
-            st.metric("Character Count", f"{char_count}/{TARGET_CHARS}")
-        with col_stats[1]:
-            st.metric("Words", len(comment.split()))
-        with col_stats[2]:
-            if char_count < TARGET_CHARS - 50:
-                st.success("✓ Good length")
-            else:
-                st.warning("Near limit")
-        
-        # Store in session
-        if 'all_comments' not in st.session_state:
-            st.session_state.all_comments = []
-        
-        student_entry = {
-            'name': name,
-            'subject': subject,
-            'year': year,
-            'comment': comment,
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M")
-        }
-        st.session_state.all_comments.append(student_entry)
-        
-        # Auto-scroll to top after generation
-        if st.session_state.form_submitted:
-            js_scroll_top = """
-            <script>
-                // Scroll to the top of the generated comment section
-                var element = document.querySelector('h3:has(+ .stTextArea)');
-                if (element) {
-                    element.scrollIntoView({behavior: 'smooth'});
-                }
-            </script>
-            """
-            st.components.v1.html(js_scroll_top, height=0)
-            st.session_state.form_submitted = False
-        
-        # Add Another Student button
-        col_reset = st.columns([3, 1])
-        with col_reset[1]:
-            if st.button("➕ Add Another Student", type="secondary", use_container_width=True):
-                # Set flag to scroll to form
-                st.session_state.scroll_to_form = True
-                # Clear the name field specifically
-                if 'student_name_input' in st.session_state:
-                    st.session_state.student_name_input = ""
-                if 'attitude_target_input' in st.session_state:
-                    st.session_state.attitude_target_input = ""
-                
-                st.session_state.progress = 1
-                # Force a rerun to show clean form
-                st.rerun()
+    # Process form submission
+    if submitted:
+        if not name or not name.strip():
+            st.error("Please enter a student name")
+        else:
+            if not validate_upload_rate():
+                st.stop()
+            
+            name = sanitize_input(name)
+            pronouns = get_pronouns(gender)
+            
+            with st.spinner("Generating comment..."):
+                comment = generate_comment(subject, year, name, gender, att, achieve, 
+                                         target, pronouns, 
+                                         attitude_target)
+                char_count = len(comment)
+            
+            st.session_state.progress = 2
+            st.session_state.form_submitted = True
+            
+            # Display comment with stats
+            st.subheader("📝 Generated Comment")
+            st.text_area("", comment, height=200, key="comment_display")
+            
+            col_stats = st.columns(3)
+            with col_stats[0]:
+                st.metric("Character Count", f"{char_count}/{TARGET_CHARS}")
+            with col_stats[1]:
+                st.metric("Words", len(comment.split()))
+            with col_stats[2]:
+                if char_count < TARGET_CHARS - 50:
+                    st.success("✓ Good length")
+                else:
+                    st.warning("Near limit")
+            
+            # Store in session
+            if 'all_comments' not in st.session_state:
+                st.session_state.all_comments = []
+            
+            student_entry = {
+                'name': name,
+                'subject': subject,
+                'year': year,
+                'comment': comment,
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M")
+            }
+            st.session_state.all_comments.append(student_entry)
+            
+            # Auto-scroll to top after generation
+            if st.session_state.form_submitted:
+                js_scroll_top = """
+                <script>
+                    // Scroll to the generated comment section
+                    var elements = document.querySelectorAll('h3');
+                    for (var i = 0; i < elements.length; i++) {
+                        if (elements[i].textContent.includes('Generated Comment')) {
+                            elements[i].scrollIntoView({behavior: 'smooth'});
+                            break;
+                        }
+                    }
+                </script>
+                """
+                st.components.v1.html(js_scroll_top, height=0)
+                st.session_state.form_submitted = False
+            
+            # Add Another Student button
+            col_reset = st.columns([3, 1])
+            with col_reset[1]:
+                if st.button("➕ Add Another Student", type="secondary", use_container_width=True):
+                    # Set flag to scroll to form
+                    st.session_state.scroll_to_form = True
+                    # Clear only the name and attitude target fields
+                    if 'student_name_input' in st.session_state:
+                        st.session_state.student_name_input = ""
+                    if 'attitude_target_input' in st.session_state:
+                        st.session_state.attitude_target_input = ""
+                    
+                    st.session_state.progress = 1
+                    # Force a rerun to show clean form
+                    st.rerun()
     
     # Scroll to form when "Add Another Student" is clicked
     if st.session_state.get('scroll_to_form', False):
@@ -801,12 +853,13 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
         if st.button("🗑️ Clear & Start Over", type="secondary", use_container_width=True):
             st.session_state.all_comments = []
             st.session_state.progress = 1
+            # Clear form fields
+            for key in ['student_name_input', 'attitude_target_input', 
+                       'form_subject', 'form_year', 'form_gender',
+                       'form_att', 'form_achieve', 'form_target']:
+                if key in st.session_state:
+                    del st.session_state[key]
             st.success("All comments cleared! Ready for new entries.")
-            # Also clear form fields
-            if 'student_name_input' in st.session_state:
-                st.session_state.student_name_input = ""
-            if 'attitude_target_input' in st.session_state:
-                st.session_state.attitude_target_input = ""
             st.rerun()
 
 # ========== FOOTER ==========
