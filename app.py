@@ -381,11 +381,11 @@ col1, col2 = st.columns([1, 4])
 
 with col1:
     try:
-        st.image("logo.png", width=100)
+        st.image("logo.png", use_column_width=True)  # Logo will auto-fit column
     except:
         st.markdown("""
         <div style='text-align: center;'>
-            <div style='font-size: 48px;'>📚</div>
+            <div style='font-size: 72px;'>📚</div>
         </div>
         """, unsafe_allow_html=True)
 
