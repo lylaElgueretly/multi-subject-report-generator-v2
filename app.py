@@ -166,6 +166,10 @@ def fix_pronouns_in_text(text, pronoun, possessive):
     if not text:
         return text
     
+    # Fix the specific spelling mistake you found
+    text = text.replace('approacshed', 'approached')
+    text = text.replace('tshe', 'the')
+    
     # Replace all pronoun variations
     text = text.replace('he', pronoun).replace('He', pronoun.capitalize())
     text = text.replace('his', possessive).replace('His', possessive.capitalize())
@@ -344,17 +348,6 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
 
 # Sidebar for navigation and info
 with st.sidebar:
-    # ALWAYS SHOW LOGO - No try/except needed
-    st.markdown("""
-    <div style='text-align: center; padding: 10px;'>
-        <div style='font-size: 48px; margin-bottom: 10px;'>📚</div>
-        <h2 style='margin: 0; color: #1E88E5;'>Report Generator</h2>
-        <p style='color: #666; font-size: 14px; margin-top: 5px;'>v2.2 • Teacher-Friendly</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("---")  # Separator line after logo
-    
     st.title("📚 Navigation")
     
     app_mode = st.radio(
@@ -381,11 +374,24 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.caption("For educational use only")
+    st.caption("v2.3 • Teacher-Friendly Edition")
 
-# Main content area
-st.title("📝 Multi-Subject Report Comment Generator")
-st.caption("~499 characters per comment • Secure • No data retention")
+# Main content area with logo
+col1, col2 = st.columns([1, 4])
+
+with col1:
+    try:
+        st.image("logo.png", width=100)
+    except:
+        st.markdown("""
+        <div style='text-align: center;'>
+            <div style='font-size: 48px;'>📚</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+with col2:
+    st.title("Multi-Subject Report Comment Generator")
+    st.caption("~499 characters per comment • Secure • No data retention")
 
 # Privacy notice banner
 st.warning("""
@@ -674,7 +680,7 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
     with col_dl1:
         if st.button("📄 Word Document", use_container_width=True):
             doc = Document()
-            doc.add_heading('Student Report Comments', 0)
+            doc.add_heading('Report Comments', 0)
             doc.add_paragraph(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}')
             doc.add_paragraph(f'Total Students: {total_comments}')
             doc.add_paragraph('')
@@ -731,7 +737,7 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
 st.markdown("---")
 footer_cols = st.columns([2, 1])
 with footer_cols[0]:
-    st.caption("© Report Generator v2.2 | For educational use only")
+    st.caption("© Report Generator v2.3 | For educational use only")
 with footer_cols[1]:
     if st.button("ℹ️ Quick Help", use_container_width=True):
         st.info("""
