@@ -162,7 +162,7 @@ def truncate_comment(comment, target=TARGET_CHARS):
     return truncated
 
 def fix_pronouns_in_text(text, pronoun, possessive):
-    """Fix gender pronouns in statement text"""
+    """Fix gender pronouns and common typos in statement text"""
     if not text:
         return text
     
@@ -183,30 +183,31 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
     p, p_poss = pronouns
     name = sanitize_input(name)
 
+    # Choose the correct banks
     if subject == "English":
-    if year == 7:
-        # ========== DEBUG CODE START ==========
-        st.write("🔍 **DEBUG INFO for Year 7 English:**")
-        st.write(f"Student: {name}")
-        st.write(f"Target band selected: {target}")
-        
-        # Get the raw text from your statement file
-        raw_target_text = target_7_eng[target]
-        st.write(f"Raw text from statement file: '{raw_target_text}'")
-        
-        # Check for "tshe" typo
-        if "tshe" in raw_target_text:
-            st.error("❌ PROBLEM FOUND: 'tshe' is in the statement file!")
-        else:
-            st.success("✅ Good: No 'tshe' in statement file")
-        # ========== DEBUG CODE END ==========
-        
-        opening = random.choice(opening_7_eng)
-        # FIXED: CORRECT pronoun handling for attitude
-        attitude_text = fix_pronouns_in_text(attitude_7_eng[att], p, p_poss)
-        attitude_sentence = f"{opening} {name} {attitude_text}"
-        if not attitude_sentence.endswith('.'):
-            attitude_sentence += '.'
+        if year == 7:
+            # ========== DEBUG CODE START ==========
+            st.write("🔍 **DEBUG INFO for Year 7 English:**")
+            st.write(f"Student: {name}")
+            st.write(f"Target band selected: {target}")
+            
+            # Get the raw text from your statement file
+            raw_target_text = target_7_eng[target]
+            st.write(f"Raw text from statement file: '{raw_target_text}'")
+            
+            # Check for "tshe" typo
+            if "tshe" in raw_target_text:
+                st.error("❌ PROBLEM FOUND: 'tshe' is in the statement file!")
+            else:
+                st.success("✅ Good: No 'tshe' in statement file")
+            # ========== DEBUG CODE END ==========
+            
+            opening = random.choice(opening_7_eng)
+            # FIXED: CORRECT pronoun handling for attitude
+            attitude_text = fix_pronouns_in_text(attitude_7_eng[att], p, p_poss)
+            attitude_sentence = f"{opening} {name} {attitude_text}"
+            if not attitude_sentence.endswith('.'):
+                attitude_sentence += '.'
             
             # FIXED: CORRECT pronoun handling for reading - ADD PRONOUN!
             reading_text = fix_pronouns_in_text(reading_7_eng[achieve], p, p_poss)
