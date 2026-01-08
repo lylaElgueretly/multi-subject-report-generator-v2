@@ -102,10 +102,10 @@ def validate_file(file):
     """Validate uploaded file size and type"""
     if file.size > MAX_FILE_SIZE_MB * 1024 * 1024:
         return False, f"File too large (max {MAX_FILE_SIZE_MB}MB)"
-
+    
     if not file.name.lower().endswith('.csv'):
         return False, "Only CSV files allowed"
-
+    
     return True, ""
 
 def process_csv_securely(uploaded_file):
@@ -114,26 +114,26 @@ def process_csv_securely(uploaded_file):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='wb') as tmp:
         tmp.write(uploaded_file.getvalue())
         temp_path = tmp.name
-
+    
     try:
         # Read CSV with limits
         df = pd.read_csv(temp_path, nrows=MAX_ROWS_PER_UPLOAD + 1)
-
+        
         # Check row count
         if len(df) > MAX_ROWS_PER_UPLOAD:
             st.warning(f"Only processing first {MAX_ROWS_PER_UPLOAD} rows")
             df = df.head(MAX_ROWS_PER_UPLOAD)
-
+        
         # Sanitize student names
         if 'Student Name' in df.columns:
             df['Student Name'] = df['Student Name'].apply(lambda x: sanitize_input(str(x)))
-
+        
         return df
-
+        
     except Exception as e:
         st.error(f"Error reading CSV: {e}")
         return None
-
+        
     finally:
         # Always delete temp file
         try:
@@ -161,6 +161,18 @@ def truncate_comment(comment, target=TARGET_CHARS):
         truncated = truncated[:truncated.rfind(".")+1]
     return truncated
 
+def fix_pronouns_in_text(text, pronoun, possessive):
+    """Fix gender pronouns in statement text"""
+    if not text:
+        return text
+    
+    # Replace all pronoun variations
+    text = text.replace('he', pronoun).replace('He', pronoun.capitalize())
+    text = text.replace('his', possessive).replace('His', possessive.capitalize())
+    text = text.replace('him', pronoun).replace('Him', pronoun.capitalize())
+    
+    return text
+
 def generate_comment(subject, year, name, gender, att, achieve, target, pronouns, attitude_target=None):
     p, p_poss = pronouns
     name = sanitize_input(name)
@@ -169,35 +181,70 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
     if subject == "English":
         if year == 7:
             opening = random.choice(opening_7_eng)
-            attitude_sentence = f"{opening} {name} {attitude_7_eng[att]}."
-            reading_sentence = f"In reading, {p} {reading_7_eng[achieve]}."
-            writing_sentence = f"In writing, {p} {writing_7_eng[achieve]}."
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_7_eng[target])}."
-            writing_target_sentence = f"Additionally, {p} should {lowercase_first(target_write_7_eng[target])}."
+            # FIXED: Use fix_pronouns_in_text to handle gender pronouns
+            attitude_text = fix_pronouns_in_text(attitude_7_eng[att], p, p_poss)
+            attitude_sentence = f"{opening} {name} {attitude_text}."
+            
+            reading_text = fix_pronouns_in_text(reading_7_eng[achieve], p, p_poss)
+            reading_sentence = f"In reading, {reading_text}."
+            
+            writing_text = fix_pronouns_in_text(writing_7_eng[achieve], p, p_poss)
+            writing_sentence = f"In writing, {writing_text}."
+            
+            reading_target_text = fix_pronouns_in_text(target_7_eng[target], p, p_poss)
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(reading_target_text)}."
+            
+            writing_target_text = fix_pronouns_in_text(target_write_7_eng[target], p, p_poss)
+            writing_target_sentence = f"Additionally, {p} should {lowercase_first(writing_target_text)}."
+            
             closer_sentence = random.choice(closer_7_eng)
+            
         else:  # Year 8
             opening = random.choice(opening_8_eng)
-            attitude_sentence = f"{opening} {name} {attitude_8_eng[att]}."
-            reading_sentence = f"In reading, {p} {reading_8_eng[achieve]}."
-            writing_sentence = f"In writing, {p} {writing_8_eng[achieve]}."
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_8_eng[target])}."
-            writing_target_sentence = f"Additionally, {p} should {lowercase_first(target_write_8_eng[target])}."
+            attitude_text = fix_pronouns_in_text(attitude_8_eng[att], p, p_poss)
+            attitude_sentence = f"{opening} {name} {attitude_text}."
+            
+            reading_text = fix_pronouns_in_text(reading_8_eng[achieve], p, p_poss)
+            reading_sentence = f"In reading, {reading_text}."
+            
+            writing_text = fix_pronouns_in_text(writing_8_eng[achieve], p, p_poss)
+            writing_sentence = f"In writing, {writing_text}."
+            
+            reading_target_text = fix_pronouns_in_text(target_8_eng[target], p, p_poss)
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(reading_target_text)}."
+            
+            writing_target_text = fix_pronouns_in_text(target_write_8_eng[target], p, p_poss)
+            writing_target_sentence = f"Additionally, {p} should {lowercase_first(writing_target_text)}."
+            
             closer_sentence = random.choice(closer_8_eng)
 
     else:  # Science
         if year == 7:
             opening = random.choice(opening_7_sci)
-            attitude_sentence = f"{opening} {name} {attitude_7_sci[att]}."
-            reading_sentence = f"{p} {science_7_sci[achieve]}."
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_7_sci[target])}."
+            attitude_text = fix_pronouns_in_text(attitude_7_sci[att], p, p_poss)
+            attitude_sentence = f"{opening} {name} {attitude_text}."
+            
+            science_text = fix_pronouns_in_text(science_7_sci[achieve], p, p_poss)
+            reading_sentence = f"{science_text}."
+            
+            target_text = fix_pronouns_in_text(target_7_sci[target], p, p_poss)
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_text)}."
+            
             writing_target_sentence = ""  # Not used for science
             closer_sentence = random.choice(closer_7_sci)
             writing_sentence = ""  # Not used for science
+            
         else:  # Year 8
             opening = random.choice(opening_8_sci)
-            attitude_sentence = f"{opening} {name} {attitude_8_sci[att]}."
-            reading_sentence = f"{p} {science_8_sci[achieve]}."
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_8_sci[target])}."
+            attitude_text = fix_pronouns_in_text(attitude_8_sci[att], p, p_poss)
+            attitude_sentence = f"{opening} {name} {attitude_text}."
+            
+            science_text = fix_pronouns_in_text(science_8_sci[achieve], p, p_poss)
+            reading_sentence = f"{science_text}."
+            
+            target_text = fix_pronouns_in_text(target_8_sci[target], p, p_poss)
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_text)}."
+            
             writing_target_sentence = ""  # Not used for science
             closer_sentence = random.choice(closer_8_sci)
             writing_sentence = ""  # Not used for science
@@ -227,12 +274,12 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
 # Sidebar for navigation and info
 with st.sidebar:
     st.title("📚 Navigation")
-
+    
     app_mode = st.radio(
         "Choose Mode",
         ["Single Student", "Batch Upload", "Privacy Info"]
     )
-
+    
     st.markdown("---")
     st.markdown("### 🔒 Privacy Features")
     st.info("""
@@ -242,7 +289,7 @@ with st.sidebar:
     - Input sanitization
     - Rate limiting enabled
     """)
-
+    
     if st.button("🔄 Clear All Data", type="secondary"):
         st.session_state.clear()
         st.session_state.app_initialized = True
@@ -250,9 +297,9 @@ with st.sidebar:
         st.session_state.last_upload_time = datetime.now()
         st.success("All data cleared!")
         st.rerun()
-
+    
     st.markdown("---")
-    st.caption("v2.0 • Secure Edition")
+    st.caption("v2.1 • Secure Edition")
 
 # Main content area
 st.title("🔒 Secure Multi-Subject Report Comment Generator")
@@ -260,7 +307,7 @@ st.caption("~499 characters per comment • Ephemeral processing • No data ret
 
 # Privacy notice banner
 st.warning("""
-**PRIVACY NOTICE:** All data is processed in memory only. No files are stored on our servers.
+**PRIVACY NOTICE:** All data is processed in memory only. No files are stored on our servers. 
 Close browser tab to completely erase all data. For use with anonymized student data only.
 """, icon="🔒")
 
@@ -279,53 +326,58 @@ with progress_cols[2]:
 # ========== SINGLE STUDENT MODE ==========
 if app_mode == "Single Student":
     st.subheader("👤 Single Student Entry")
-
+    
     with st.form("single_student_form"):
         col1, col2 = st.columns(2)
-
+        
         with col1:
             subject = st.selectbox("Subject", ["English", "Science"])
             year = st.selectbox("Year", [7, 8])
             name = st.text_input("Student Name", placeholder="Enter first name only")
             gender = st.selectbox("Gender", ["Male", "Female"])
-
+        
         with col2:
-            att = st.select_slider("Attitude Band",
+            # FIXED: Using dropdowns instead of sliders for faster teacher input
+            att = st.selectbox("Attitude Band", 
+                             options=[90,85,80,75,70,65,60,55,40],
+                             index=3)  # Default to 75
+            
+            achieve = st.selectbox("Achievement Band",
                                  options=[90,85,80,75,70,65,60,55,40],
-                                 value=75)
-            achieve = st.select_slider("Achievement Band",
-                                     options=[90,85,80,75,70,65,60,55,40],
-                                     value=75)
-            target = st.select_slider("Target Band",
-                                    options=[90,85,80,75,70,65,60,55,40],
-                                    value=75)
-
+                                 index=3)  # Default to 75
+            
+            target = st.selectbox("Target Band",
+                                options=[90,85,80,75,70,65,60,55,40],
+                                index=3)  # Default to 75
+            
+            st.caption("💡 Use dropdowns for faster input. Tab key moves between fields.")
+        
         attitude_target = st.text_area("Optional Attitude Next Steps",
                                      placeholder="E.g., continue to participate actively in class discussions...",
                                      height=60)
-
+        
         col_submit = st.columns([3, 1])
         with col_submit[1]:
             submitted = st.form_submit_button("🚀 Generate Comment", use_container_width=True)
-
+    
     if submitted and name:
         if not validate_upload_rate():
             st.stop()
-
+        
         name = sanitize_input(name)
         pronouns = get_pronouns(gender)
-
+        
         with st.spinner("Generating comment..."):
-            comment = generate_comment(subject, year, name, gender, att, achieve,
+            comment = generate_comment(subject, year, name, gender, att, achieve, 
                                      target, pronouns, attitude_target)
             char_count = len(comment)
-
+        
         st.session_state.progress = 2
-
+        
         # Display comment with stats
         st.subheader("📝 Generated Comment")
         st.text_area("", comment, height=200, key="comment_display")
-
+        
         col_stats = st.columns(3)
         with col_stats[0]:
             st.metric("Character Count", f"{char_count}/{TARGET_CHARS}")
@@ -336,11 +388,11 @@ if app_mode == "Single Student":
                 st.success("✓ Good length")
             else:
                 st.warning("Near limit")
-
+        
         # Store in session
         if 'all_comments' not in st.session_state:
             st.session_state.all_comments = []
-
+        
         student_entry = {
             'name': name,
             'subject': subject,
@@ -349,7 +401,7 @@ if app_mode == "Single Student":
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M")
         }
         st.session_state.all_comments.append(student_entry)
-
+        
         # Add another button
         if st.button("➕ Add Another Student", type="secondary"):
             st.session_state.progress = 1
@@ -358,7 +410,7 @@ if app_mode == "Single Student":
 # ========== BATCH UPLOAD MODE ==========
 elif app_mode == "Batch Upload":
     st.subheader("📁 Batch Upload (CSV)")
-
+    
     st.info("""
     **CSV Format Required:**
     - Columns: Student Name, Gender, Subject, Year, Attitude, Achievement, Target
@@ -367,41 +419,54 @@ elif app_mode == "Batch Upload":
     - Year: 7 or 8
     - Bands: 90,85,80,75,70,65,60,55,40
     """)
-
+    
+    # Add example CSV download
+    example_csv = """Student Name,Gender,Subject,Year,Attitude,Achievement,Target
+Aseel,Female,English,7,75,80,85
+Mohamed,Male,Science,8,80,75,80
+Sarah,Female,English,7,85,90,85"""
+    
+    st.download_button(
+        label="📥 Download Example CSV",
+        data=example_csv,
+        file_name="example_students.csv",
+        mime="text/csv"
+    )
+    
     uploaded_file = st.file_uploader("Choose CSV file", type=['csv'])
-
+    
     if uploaded_file:
         if not validate_upload_rate():
             st.stop()
-
+        
         is_valid, msg = validate_file(uploaded_file)
         if not is_valid:
             st.error(msg)
             st.stop()
-
+        
         with st.spinner("Processing CSV securely..."):
             df = process_csv_securely(uploaded_file)
-
+        
         if df is not None:
             st.success(f"Processed {len(df)} students successfully")
-
+            
             # Preview
             with st.expander("📋 Preview Data (First 5 rows)"):
                 st.dataframe(df.head())
-
+            
             if st.button("🚀 Generate All Comments", type="primary"):
                 if 'all_comments' not in st.session_state:
                     st.session_state.all_comments = []
-
+                
                 progress_bar = st.progress(0)
                 status_text = st.empty()
-
+                
                 for idx, row in df.iterrows():
                     # Update progress
                     progress = (idx + 1) / len(df)
                     progress_bar.progress(progress)
                     status_text.text(f"Processing {idx + 1}/{len(df)}: {row.get('Student Name', 'Student')}")
-
+                    
                     try:
                         pronouns = get_pronouns(str(row.get('Gender', '')).lower())
                         comment = generate_comment(
@@ -414,7 +479,7 @@ elif app_mode == "Batch Upload":
                             target=int(row.get('Target', 75)),
                             pronouns=pronouns
                         )
-
+                        
                         student_entry = {
                             'name': sanitize_input(str(row.get('Student Name', ''))),
                             'subject': str(row.get('Subject', 'English')),
@@ -423,10 +488,10 @@ elif app_mode == "Batch Upload":
                             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M")
                         }
                         st.session_state.all_comments.append(student_entry)
-
+                        
                     except Exception as e:
                         st.error(f"Error processing row {idx + 1}: {e}")
-
+                
                 progress_bar.empty()
                 status_text.empty()
                 st.session_state.progress = 2
@@ -436,46 +501,46 @@ elif app_mode == "Batch Upload":
 # ========== PRIVACY INFO MODE ==========
 elif app_mode == "Privacy Info":
     st.subheader("🔐 Privacy & Security Information")
-
+    
     st.markdown("""
     ### How We Protect Student Data
-
+    
     **Data Handling:**
     - All processing happens in your browser's memory
     - No student data is sent to or stored on our servers
     - Temporary files are created and immediately deleted
     - No database or persistent storage is used
-
+    
     **Security Features:**
     1. **Input Sanitization** - Removes special characters from names
     2. **Rate Limiting** - Prevents abuse of the system
     3. **File Validation** - Checks file size and type
     4. **Auto-Cleanup** - Temporary files deleted after processing
     5. **Memory Clearing** - All data erased on browser close
-
+    
     **Best Practices for Users:**
     - Use only first names or student IDs
     - Close browser tab when finished to clear all data
     - Download reports immediately after generation
     - For maximum privacy, use on school-managed devices
-
+    
     **Compliance:**
     - Designed for use with anonymized data
     - Suitable for FERPA/GDPR compliant workflows
     - No third-party data sharing
     """)
-
+    
     if st.button("🖨️ Print Privacy Notice", type="secondary"):
         privacy_text = """
         MULTI-SUBJECT REPORT GENERATOR - PRIVACY NOTICE
-
+        
         Data Processing: All student data is processed locally in memory only.
         No data is transmitted to external servers or stored permanently.
-
+        
         Data Retention: All data is cleared when the browser tab is closed.
-
+        
         Security: Input sanitization and validation prevents data injection.
-
+        
         Usage: For use with anonymized student data only.
         """
         st.text_area("Privacy Notice for Records", privacy_text, height=300)
@@ -485,20 +550,20 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
     st.session_state.progress = 3
     st.markdown("---")
     st.subheader("📥 Download Reports")
-
+    
     total_comments = len(st.session_state.all_comments)
     st.info(f"You have {total_comments} generated comment(s)")
-
+    
     # Preview comments
     with st.expander(f"👁️ Preview All Comments ({total_comments})"):
         for idx, entry in enumerate(st.session_state.all_comments, 1):
             st.markdown(f"**{idx}. {entry['name']}** ({entry['subject']} Year {entry['year']})")
             st.write(entry['comment'])
             st.markdown("---")
-
+    
     # Download options
     col_dl1, col_dl2, col_dl3 = st.columns(3)
-
+    
     with col_dl1:
         if st.button("📄 Word Document", use_container_width=True):
             doc = Document()
@@ -506,16 +571,16 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
             doc.add_paragraph(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}')
             doc.add_paragraph(f'Total Students: {total_comments}')
             doc.add_paragraph('')
-
+            
             for entry in st.session_state.all_comments:
                 doc.add_heading(f"{entry['name']} - {entry['subject']} Year {entry['year']}", level=2)
                 doc.add_paragraph(entry['comment'])
                 doc.add_paragraph('')
-
+            
             # Save to bytes
             bio = io.BytesIO()
             doc.save(bio)
-
+            
             st.download_button(
                 label="⬇️ Download Word File",
                 data=bio.getvalue(),
@@ -523,7 +588,7 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True
             )
-
+    
     with col_dl2:
         if st.button("📊 CSV Export", use_container_width=True):
             # Create CSV
@@ -536,10 +601,10 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
                     'Comment': entry['comment'],
                     'Generated': entry['timestamp']
                 })
-
+            
             df_export = pd.DataFrame(csv_data)
             csv_bytes = df_export.to_csv(index=False).encode('utf-8')
-
+            
             st.download_button(
                 label="⬇️ Download CSV",
                 data=csv_bytes,
@@ -547,7 +612,7 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
                 mime="text/csv",
                 use_container_width=True
             )
-
+    
     with col_dl3:
         if st.button("🗑️ Clear & Start Over", type="secondary", use_container_width=True):
             st.session_state.all_comments = []
@@ -559,7 +624,7 @@ if 'all_comments' in st.session_state and st.session_state.all_comments:
 st.markdown("---")
 footer_cols = st.columns([2, 1])
 with footer_cols[0]:
-    st.caption("© Secure Report Generator v2.0 | For educational use only")
+    st.caption("© Secure Report Generator v2.1 | For educational use only")
 with footer_cols[1]:
     if st.button("ℹ️ Help", use_container_width=True):
         st.info("""
@@ -569,6 +634,10 @@ with footer_cols[1]:
         3. Generate comments
         4. Download reports
         5. Close browser when done
-
+        
+        **Hotkeys:**
+        - Tab: Move between fields
+        - Enter: Submit form
+        
         Contact: Use GitHub issues for support
-        """)# Write your code here :-)
+        """)
