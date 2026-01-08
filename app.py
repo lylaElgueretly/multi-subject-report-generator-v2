@@ -185,17 +185,26 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
             attitude_text = fix_pronouns_in_text(attitude_7_eng[att], p, p_poss)
             attitude_sentence = f"{opening} {name} {attitude_text}."
             
+            # FIXED: Add pronoun to reading and writing sentences
             reading_text = fix_pronouns_in_text(reading_7_eng[achieve], p, p_poss)
-            reading_sentence = f"In reading, {reading_text}."
+            reading_sentence = f"In reading, {p} {lowercase_first(reading_text)}"
+            if not reading_sentence.endswith('.'):
+                reading_sentence += '.'
             
             writing_text = fix_pronouns_in_text(writing_7_eng[achieve], p, p_poss)
-            writing_sentence = f"In writing, {writing_text}."
+            writing_sentence = f"In writing, {p} {lowercase_first(writing_text)}"
+            if not writing_sentence.endswith('.'):
+                writing_sentence += '.'
             
             reading_target_text = fix_pronouns_in_text(target_7_eng[target], p, p_poss)
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(reading_target_text)}."
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(reading_target_text)}"
+            if not reading_target_sentence.endswith('.'):
+                reading_target_sentence += '.'
             
             writing_target_text = fix_pronouns_in_text(target_write_7_eng[target], p, p_poss)
-            writing_target_sentence = f"Additionally, {p} should {lowercase_first(writing_target_text)}."
+            writing_target_sentence = f"Additionally, {p} should {lowercase_first(writing_target_text)}"
+            if not writing_target_sentence.endswith('.'):
+                writing_target_sentence += '.'
             
             closer_sentence = random.choice(closer_7_eng)
             
@@ -204,17 +213,26 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
             attitude_text = fix_pronouns_in_text(attitude_8_eng[att], p, p_poss)
             attitude_sentence = f"{opening} {name} {attitude_text}."
             
+            # FIXED: Add pronoun to reading and writing sentences
             reading_text = fix_pronouns_in_text(reading_8_eng[achieve], p, p_poss)
-            reading_sentence = f"In reading, {reading_text}."
+            reading_sentence = f"In reading, {p} {lowercase_first(reading_text)}"
+            if not reading_sentence.endswith('.'):
+                reading_sentence += '.'
             
             writing_text = fix_pronouns_in_text(writing_8_eng[achieve], p, p_poss)
-            writing_sentence = f"In writing, {writing_text}."
+            writing_sentence = f"In writing, {p} {lowercase_first(writing_text)}"
+            if not writing_sentence.endswith('.'):
+                writing_sentence += '.'
             
             reading_target_text = fix_pronouns_in_text(target_8_eng[target], p, p_poss)
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(reading_target_text)}."
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(reading_target_text)}"
+            if not reading_target_sentence.endswith('.'):
+                reading_target_sentence += '.'
             
             writing_target_text = fix_pronouns_in_text(target_write_8_eng[target], p, p_poss)
-            writing_target_sentence = f"Additionally, {p} should {lowercase_first(writing_target_text)}."
+            writing_target_sentence = f"Additionally, {p} should {lowercase_first(writing_target_text)}"
+            if not writing_target_sentence.endswith('.'):
+                writing_target_sentence += '.'
             
             closer_sentence = random.choice(closer_8_eng)
 
@@ -225,10 +243,14 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
             attitude_sentence = f"{opening} {name} {attitude_text}."
             
             science_text = fix_pronouns_in_text(science_7_sci[achieve], p, p_poss)
-            reading_sentence = f"{science_text}."
+            reading_sentence = f"{p.capitalize()} {lowercase_first(science_text)}"
+            if not reading_sentence.endswith('.'):
+                reading_sentence += '.'
             
             target_text = fix_pronouns_in_text(target_7_sci[target], p, p_poss)
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_text)}."
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_text)}"
+            if not reading_target_sentence.endswith('.'):
+                reading_target_sentence += '.'
             
             writing_target_sentence = ""  # Not used for science
             closer_sentence = random.choice(closer_7_sci)
@@ -240,10 +262,14 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
             attitude_sentence = f"{opening} {name} {attitude_text}."
             
             science_text = fix_pronouns_in_text(science_8_sci[achieve], p, p_poss)
-            reading_sentence = f"{science_text}."
+            reading_sentence = f"{p.capitalize()} {lowercase_first(science_text)}"
+            if not reading_sentence.endswith('.'):
+                reading_sentence += '.'
             
             target_text = fix_pronouns_in_text(target_8_sci[target], p, p_poss)
-            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_text)}."
+            reading_target_sentence = f"For the next term, {p} should {lowercase_first(target_text)}"
+            if not reading_target_sentence.endswith('.'):
+                reading_target_sentence += '.'
             
             writing_target_sentence = ""  # Not used for science
             closer_sentence = random.choice(closer_8_sci)
@@ -266,9 +292,19 @@ def generate_comment(subject, year, name, gender, att, achieve, target, pronouns
     ]
 
     comment = " ".join([c for c in comment_parts if c])  # remove empty strings
+    
+    # FIXED: Ensure comment ends with a period
+    comment = comment.strip()
+    if not comment.endswith('.'):
+        comment += '.'
+    
     comment = truncate_comment(comment, TARGET_CHARS)
+    
+    # Double-check period after truncation
+    if not comment.endswith('.'):
+        comment = comment.rstrip(' ,;') + '.'
+    
     return comment
-
 # ========== STREAMLIT APP LAYOUT ==========
 
 # Sidebar for navigation and info
